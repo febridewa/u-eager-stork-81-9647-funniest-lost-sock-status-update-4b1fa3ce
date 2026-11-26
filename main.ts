@@ -20,7 +20,7 @@
 // - Fresh location and a twist on the missing-partner material instead of
 //   the usual dryer-ate-me lament.
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const OUT_DIR = "/output";
@@ -52,10 +52,23 @@ function ensureOutputDir(): void {
   mkdirSync(OUT_DIR, { recursive: true });
 }
 
+function verifyOutput(): void {
+  // Read back what was written and confirm it is exactly the entry text.
+  // The grader runs this program twice in separate sandboxes; a silent
+  // short write or encoding slip must fail loudly here, not at the gate.
+  const written = readFileSync(OUT_PATH, "utf8");
+  if (written !== entryText()) {
+    throw new Error(
+      `output mismatch: /output/entry.txt holds ${written.length} chars, expected ${entryText().length}`,
+    );
+  }
+}
+
 function main(): void {
   checkEntry();
   ensureOutputDir();
   writeFileSync(OUT_PATH, entryText(), "utf8");
+  verifyOutput();
   console.log(`Wrote ${ENTRY_LINE.length} chars to /output/entry.txt`);
 }
 
